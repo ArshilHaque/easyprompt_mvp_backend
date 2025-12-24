@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyPrompt - Account</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: -0.5px;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            background: transparent;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            color: #1a1a1a;
+            border-color: #ccc;
+            background: #f9f9f9;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
+        }
+
+        .account-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 48px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .section {
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .section:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+
+        .plan-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .plan-badge.pro {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .plan-badge.free {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .loading {
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">EasyPrompt</div>
+        <button id="logoutBtn" class="logout-btn">Logout</button>
+    </div>
+
+    <div class="main-content">
+        <div class="account-card">
+            <div class="section">
+                <h2 class="section-title">Account</h2>
+                <div class="info-row">
+                    <span class="info-label">Email</span>
+                    <span class="info-value loading" id="userEmail">Loading...</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Plan</span>
+                    <span class="info-value loading" id="userPlan">Loading...</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Credits</h2>
+                <div class="info-row">
+                    <span class="info-label">Remaining</span>
+                    <span class="info-value loading" id="creditsNumber">Loading...</span>
+                </div>
+            </div>
+
+            <div class="section" id="extensionSection" style="display: block;">
+                <h2 class="section-title">Chrome Extension</h2>
+                <div style="margin-top: 16px;">
+                    <button id="connect-extension-btn" class="button" style="display: inline-block; padding: 12px 24px; font-size: 16px; font-weight: 500; color: white; background: #3b82f6; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s;">
+                        🔗 Connect Chrome Extension
+                    </button>
+                    <p style="margin-top: 12px; font-size: 14px; color: #666;">
+                        Connect your Chrome extension to unlock Follow-up in ChatGPT. Pro required for Follow-up.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://crqaugwmmoafvbjhrrsw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNycWF1Z3dtbW9hZnZiamhycnN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyOTYwNjQsImV4cCI6MjA4MTg3MjA2NH0.-drXBQ22Nyhwh5Qs1LNaplHlztSPXDe0XtEEutv-rlE';
+        const API_BASE_URL = window.location.origin;
+        
+        // Initialize Supabase client
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Store user plan globally for extension connection
+        let currentUserPlan = 'Free';
+
+        // Redirect to auth if token invalid
+        // ONLY call this when token is actually invalid, not on every page load
+        function redirectToAuth() {
+            console.log('[AUTH] Redirecting to auth page');
+            // Only remove token if we're explicitly redirecting due to invalid token
+            // Don't clear token on page load - let checkAuthentication handle that
+            localStorage.removeItem('supabase_token');
+            window.location.href = 'auth.html';
+        }
+
+        // Load user account info from backend
+        async function loadAccountInfo(accessToken) {
+            // Ensure Authorization header is always attached
+            if (!accessToken) {
+                console.error('[AUTH] No access token provided to loadAccountInfo');
+                // Don't logout - token might be temporarily unavailable
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // ONLY logout on 401 (Unauthorized) - this means token is invalid/expired
+                if (response.status === 401) {
+                    console.log('[AUTH] Logging out due to 401 - token invalid or expired');
+                    redirectToAuth();
+                    return;
+                }
+
+                // For other errors (403, 500, network issues, etc.), preserve token and show error
+                if (!response.ok) {
+                    console.error('[AUTH] /api/me failed with status:', response.status, 'but token preserved');
+                    // Don't logout - keep user logged in, token is still valid
+                    // Log error but don't show UI error (user can refresh if needed)
+                    return;
+                }
+
+                // Parse response JSON
+                let userData;
+                try {
+                    userData = await response.json();
+                } catch (jsonError) {
+                    console.error('[AUTH] /api/me failed to parse JSON but token preserved:', jsonError);
+                    // Don't logout - JSON parse error doesn't mean token is invalid
+                    return;
+                }
+
+                // Validate response has required fields
+                if (!userData || typeof userData.email === 'undefined' || typeof userData.plan === 'undefined' || typeof userData.credits === 'undefined') {
+                    console.error('[AUTH] /api/me returned invalid response structure but token preserved');
+                    // Don't logout - invalid response structure doesn't mean token is invalid
+                    return;
+                }
+
+                // Success - display user data
+                // Display email
+                document.getElementById('userEmail').textContent = userData.email;
+                document.getElementById('userEmail').classList.remove('loading');
+
+                // Display plan badge and store plan globally
+                const planElement = document.getElementById('userPlan');
+                currentUserPlan = userData.plan || 'Free'; // Store plan for extension connection
+                if (userData.plan === 'Pro') {
+                    planElement.innerHTML = '<span class="plan-badge pro">Pro</span>';
+                } else {
+                    planElement.innerHTML = '<span class="plan-badge free">Free</span>';
+                }
+
+                // Display credits
+                document.getElementById('creditsNumber').textContent = userData.credits;
+                document.getElementById('creditsNumber').classList.remove('loading');
+
+                // Extension section is always visible for logged-in users
+                // (Pro check happens on backend)
+
+            } catch (error) {
+                // Network errors, fetch failures, etc. - preserve token
+                console.error('[AUTH] /api/me failed but token preserved:', error);
+                // Don't logout - network errors don't mean token is invalid
+                // User stays logged in, can retry later
+            }
+        }
+
+        // Check authentication on page load
+        async function checkAuthentication() {
+            try {
+                // Read token from localStorage (primary source for web dashboard)
+                let storedToken = localStorage.getItem('supabase_token');
+                console.log('[AUTH] Token on dashboard load (localStorage):', storedToken ? `${storedToken.substring(0, 20)}...` : 'undefined');
+                
+                // If no token in localStorage, try chrome.storage.local (for extension context)
+                if (!storedToken && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                    storedToken = await new Promise((resolve) => {
+                        chrome.storage.local.get(['authToken'], (result) => {
+                            if (chrome.runtime.lastError) {
+                                console.error('[AUTH] Error reading from chrome.storage.local:', chrome.runtime.lastError);
+                                resolve(null);
+                            } else {
+                                const token = result.authToken || null;
+                                console.log('[AUTH] Token on dashboard load (chrome.storage.local):', token ? `${token.substring(0, 20)}...` : 'undefined');
+                                resolve(token);
+                            }
+                        });
+                    });
+                    
+                    // If found in chrome.storage.local, sync to localStorage
+                    if (storedToken) {
+                        localStorage.setItem('supabase_token', storedToken);
+                        console.log('[AUTH] Token synced from chrome.storage.local to localStorage');
+                    }
+                }
+                
+                if (!storedToken) {
+                    console.log('[AUTH] No token found, redirecting to auth');
+                    redirectToAuth();
+                    return;
+                }
+
+                // Optional: Verify token with Supabase (non-blocking)
+                // If this fails, we'll still try /api/me which is the source of truth
+                try {
+                    const { data, error } = await supabaseClient.auth.getUser(storedToken);
+                    if (error || !data || !data.user) {
+                        console.warn('[AUTH] Supabase token validation failed, but will try /api/me anyway:', error?.message);
+                        // Don't logout - /api/me is the source of truth
+                    } else {
+                        console.log('[AUTH] Token validated with Supabase');
+                    }
+                } catch (supabaseError) {
+                    console.warn('[AUTH] Supabase validation error (non-blocking):', supabaseError);
+                    // Continue to /api/me anyway
+                }
+
+                console.log('[AUTH] Loading account info from backend');
+                // Always try /api/me - it's the source of truth for authentication
+                // /api/me will handle 401 and logout if needed
+                await loadAccountInfo(storedToken);
+
+            } catch (error) {
+                // Only logout if we have no token at all
+                // Network errors, etc. should not cause logout
+                console.error('[AUTH] Authentication check error (non-fatal):', error);
+                // Don't logout - preserve token, user can retry
+            }
+        }
+
+        // Logout handler - ONLY runs on explicit logout button click
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            console.log('[AUTH] Logout button clicked');
+            try {
+                await supabaseClient.auth.signOut();
+            } catch (error) {
+                console.error('[AUTH] Logout error:', error);
+            }
+            // Clear tokens on explicit logout
+            localStorage.removeItem('supabase_token');
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+                chrome.storage.local.remove(['authToken'], () => {
+                    console.log('[AUTH] Token removed from chrome.storage.local');
+                });
+            }
+            redirectToAuth();
+        });
+
+        // Connect extension button handler
+        // Function to attach click handler (works whether DOM is loaded or not)
+        function attachConnectButtonHandler() {
+            const connectBtn = document.getElementById('connect-extension-btn');
+            if (!connectBtn) {
+                console.error('Connect extension button not found');
+                return;
+            }
+
+            // Remove any existing listeners by cloning the button
+            const newBtn = connectBtn.cloneNode(true);
+            connectBtn.parentNode.replaceChild(newBtn, connectBtn);
+            const btn = document.getElementById('connect-extension-btn');
+
+            // Hardcoded extension ID for EasyPrompt Chrome extension
+            const EXTENSION_ID = 'gbidkjanopokiaehoopnledbjbhpdbfl';
+
+            btn.addEventListener('click', async () => {
+                console.log('[AUTH] Connect Chrome Extension button clicked');
+                
+                // Disable button and show loading state
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = 'Connecting...';
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
+
+                // Get user's auth token (MANDATORY for authentication)
+                const storedToken = localStorage.getItem('supabase_token');
+                
+                if (!storedToken) {
+                    console.error('[AUTH] No auth token available. User must be logged in.');
+                    alert('Please log in first before connecting the extension.');
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                    return;
+                }
+
+                console.log('[AUTH] Dashboard: Sending auth token to extension');
+                
+                // STEP 1: Send auth token to extension (MANDATORY)
+                const setTokenMessage = {
+                    action: 'EASYPROMPT_SET_TOKEN',
+                    token: storedToken
+                };
+                
+                chrome.runtime.sendMessage(EXTENSION_ID, setTokenMessage, async (tokenResponse) => {
+                    // Handle chrome.runtime.lastError (extension not installed)
+                    if (chrome.runtime.lastError) {
+                        console.error('[AUTH] Extension not detected:', chrome.runtime.lastError.message);
+                        alert('Extension not installed. Please make sure the EasyPrompt extension is installed and enabled.');
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                        return;
+                    }
+                    
+                    // Check if token was saved successfully
+                    if (!tokenResponse || !tokenResponse.success) {
+                        console.error('[AUTH] Failed to save auth token:', tokenResponse);
+                        alert('Failed to authenticate extension. Please try again.');
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                        btn.style.opacity = '1';
+                        btn.style.cursor = 'pointer';
+                        return;
+                    }
+                    
+                    console.log('[AUTH] Auth token saved successfully');
+                    
+                    // STEP 2: If user is Pro, also send proToken for Follow-up access
+                    let proToken = null;
+                    if (currentUserPlan === 'Pro') {
+                        proToken = storedToken;
+                        console.log('[AUTH] User is Pro, sending proToken for Follow-up access');
+                    }
+                    
+                    // Send connection message with proToken (if Pro)
+                    const connectMessage = {
+                        type: 'EASYPROMPT_CONNECT',
+                        proToken: proToken
+                    };
+                    
+                    chrome.runtime.sendMessage(EXTENSION_ID, connectMessage, (connectResponse) => {
+                        if (chrome.runtime.lastError) {
+                            console.error('[AUTH] Error sending connection message:', chrome.runtime.lastError);
+                            // Token is already saved, so mark as connected anyway
+                        }
+                        
+                        // Check response
+                        if (connectResponse && connectResponse.success === true) {
+                            console.log('[AUTH] Extension connected and authenticated successfully');
+                            // Mark extension as connected
+                            btn.disabled = false;
+                            btn.textContent = '✓ Connected';
+                            btn.style.opacity = '1';
+                            btn.style.cursor = 'pointer';
+                            btn.style.background = '#10b981'; // Green for success
+                        } else {
+                            // Token was saved, so connection is successful even if connect message fails
+                            console.log('[AUTH] Extension authenticated (connection message may have failed)');
+                            btn.disabled = false;
+                            btn.textContent = '✓ Connected';
+                            btn.style.opacity = '1';
+                            btn.style.cursor = 'pointer';
+                            btn.style.background = '#10b981';
+                        }
+                    });
+                });
+            });
+        }
+
+        // Attach handler on DOMContentLoaded (or immediately if DOM is already loaded)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', attachConnectButtonHandler);
+        } else {
+            // DOM is already loaded
+            attachConnectButtonHandler();
+        }
+
+        // Run authentication check on page load
+        checkAuthentication();
+    </script>
+</body>
+</html>
